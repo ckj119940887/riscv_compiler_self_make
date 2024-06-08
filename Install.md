@@ -1,6 +1,6 @@
 # Ubuntu dependencies
 ```
-sudo apt-get install autoconf automake autotools-dev curl python3 libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev libglib2.0-dev clang ninja-build 
+sudo apt-get install autoconf automake autotools-dev curl python3 libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev libglib2.0-dev ninja-build 
 sudo apt-get install libusb-1.0-0-dev device-tree-compiler pkg-config cmake libpixman-1-dev
 ```
 
