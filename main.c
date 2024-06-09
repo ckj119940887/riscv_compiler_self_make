@@ -21,6 +21,8 @@ struct Token {
     int Len; //长度
 };
 
+static char* CurrentInput;
+
 // 错误处理函数
 static void error(char* Fmt, ...)
 {
@@ -36,6 +38,37 @@ static void error(char* Fmt, ...)
     //清除VA
     va_end(VA);
 
+    exit(1);
+}
+
+// 错误出现的位置
+static void verrorAt(char* Loc, char* Fmt, va_list VA) {
+    // 先输出源字符串
+    fprintf(stderr, "%s\n", CurrentInput);
+
+    // 计算出错位置, Loc是出错位置的指针，CurrentInput是当前输入的首地址
+    int Pos = Loc - CurrentInput;
+    // 将字符串补齐Pos位，补齐字符为空格
+    fprintf(stderr, "%*s", Pos, "");
+    fprintf(stderr, "^ ");
+    vfprintf(stderr, Fmt, VA);
+    fprintf(stderr, "\n");
+    va_end(VA);
+}
+
+// 字符解析出错，退出程序
+static void errorAt(char* Loc, char* Fmt, ...) {
+    va_list VA;
+    va_start(VA, Fmt);
+    verrorAt(Loc, Fmt, VA);
+    exit(1);
+}
+
+// Tok解析出错，并退出程序
+static void errorTok(Token* Tok, char* Fmt, ...) {
+    va_list VA;
+    va_start(VA, Fmt);
+    verrorAt(Tok->Loc, Fmt, VA);
     exit(1);
 }
 
@@ -57,7 +90,7 @@ static bool equal(Token* Tok, char* Str) {
 // 跳过指定的Str
 static Token* skip(Token* Tok, char* Str) {
     if(!equal(Tok, Str))
-        error("expect '%s'", Str);
+        errorTok(Tok, "expect '%s'", Str);
     return Tok->Next;
 }
 
@@ -65,7 +98,7 @@ static Token* skip(Token* Tok, char* Str) {
 static int getNumber(Token* Tok)
 {
     if(Tok->Kind != TK_NUM)
-        error("expect a number");
+        errorTok(Tok, "expect a number");
     return Tok->Val;
 }
 
@@ -80,7 +113,8 @@ static Token* newToken(TokenKind Kind, char* Start, char* End) {
 }
 
 // 终结符解析
-static Token* tokenize(char* P) {
+static Token* tokenize() {
+    char *P = CurrentInput;
     Token Head = {};
     Token* Cur = &Head;
 
@@ -111,7 +145,7 @@ static Token* tokenize(char* P) {
             continue;
         }
 
-        error("invalid token: '%c'", *P);
+        errorAt(P, "invalid token");
     }
 
     Cur->Next = newToken(TK_EOF, P, P);
@@ -124,7 +158,8 @@ int main(int Argc, char** Argv) {
         error("%s: invalid number of arguments %s\n", Argv[0], Argv[1]);
     }
 
-    Token* Tok = tokenize(Argv[1]);
+    CurrentInput = Argv[1];
+    Token* Tok = tokenize();
 
     printf("  .global main\n");
     printf("main:\n");
