@@ -8,7 +8,7 @@ assert()
     input="$2"
 
     # 成功执行 || 之前的语句时将会短路exit
-    ./build/rvcc $input > ./assembly/tmp.s || exit
+    ./build/rvcc "$input" > ./assembly/tmp.s || exit
     riscv64-unknown-linux-gnu-gcc -static ./assembly/tmp.s -o ./assembly/tmp
     qemu-riscv64 -L $RISCV/sysroot ./assembly/tmp
     # spike --isa=rv64gc $RISCV/riscv64-unknown-linux-gnu/bin/pk ./assembly/tmp
@@ -23,8 +23,14 @@ assert()
     fi
 }
 
+# 返回指定数值
 assert 0 0
+
+# 支持+/-运算符
 assert 34 34
-assert 34 12-34+56
+assert 34 '12-34+56'
+
+# 支持空格
+assert 41 ' 11 + 33-3 '
 
 echo "ok"
