@@ -77,3 +77,9 @@ int main()
 riscv64-unknown-elf-gcc hello.c -o hello
 spike pk hello
 ```
+
+## qemu-test
+```
+riscv64-unknown-elf-gcc hello.c -o hello
+qemu-riscv64 hello
+```
