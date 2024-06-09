@@ -8,7 +8,7 @@ assert()
     input="$2"
 
     # 成功执行 || 之前的语句时将会短路exit
-    ./rvcc $input > ./assembly/tmp.s || exit
+    ./build/rvcc $input > ./assembly/tmp.s || exit
     riscv64-unknown-linux-gnu-gcc -static ./assembly/tmp.s -o ./assembly/tmp
     qemu-riscv64 -L $RISCV/sysroot ./assembly/tmp
     # spike --isa=rv64gc $RISCV/riscv64-unknown-linux-gnu/bin/pk ./assembly/tmp
@@ -25,5 +25,6 @@ assert()
 
 assert 0 0
 assert 34 34
+assert 34 12-34+56
 
 echo "ok"
