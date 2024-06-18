@@ -1,3 +1,7 @@
+// 使用POSIX.1标准
+// 使用了strndup函数
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -59,23 +63,40 @@ typedef enum {
     ND_NUM, // 整形数字
 } NodeKind;
 
-// AST中二叉树节点
 typedef struct Node Node;
+
+// 本地变量
+typedef struct Obj Obj;
+struct Obj {
+    Obj* Next; // 指向下一对象
+    char* Name; // 变量名
+    int Offset; // fp的偏移量
+};
+
+// AST中二叉树节点
 struct Node {
     NodeKind Kind; //种类
     Node* Next; // 下一语句
     Node* LHS; //左部
     Node* RHS; //右部
-    char Name; //存储ND_VAR的字符串
+    Obj* Var; //存储ND_VAR的种类
     int Val; //ND_NUM种类的值
 };
 
+//函数
+typedef struct Function Function;
+struct Function {
+    Node* Body; //函数体
+    Obj* Locals; //本地变量
+    int StackSize; //栈大小
+};
+
 // 语法解析入口函数
-Node *parse(Token *Tok);
+Function* parse(Token *Tok);
 
 //
 // 语义分析与代码生成
 //
 
 // 代码生成入口函数
-void codegen(Node *Nd);
+void codegen(Function *Prog);

@@ -98,6 +98,18 @@ bool startWith(char* Str, char* SubStr)
     return strncmp(Str, SubStr, strlen(SubStr)) == 0;
 }
 
+// 判断标记符的首字母规则
+// [a-zA-Z_]
+static bool isIdent1(char C) {
+    return ('a' <= C && C <= 'z') || ('A' <= C && C <= 'Z') || (C == '_');
+}
+
+// 判断标记符的非首字母规则
+// [a-zA-Z0-9_]
+static bool isIdent2(char C) {
+    return isIdent1(C) || ('0' <= C && C <= '9');
+}
+
 // 读取操作符
 static int readPunct(char* Ptr)
 {
@@ -137,10 +149,17 @@ Token* tokenize(char* P) {
         }
 
         //解析标识符
-        if('a' <= *P && *P <= 'z') {
-            Cur->Next = newToken(TK_IDENT, P, P + 1);
+        //[a-zA-Z_][a-zA-Z0-9_]*
+        if(isIdent1(*P)) {
+            char* Start = P;
+            do {
+                ++P;
+            } while(isIdent2(*P));
+
+            // do-while循环里面P多加了一次
+            Cur->Next = newToken(TK_IDENT, Start, P);
             Cur = Cur->Next;
-            ++P;
+
             continue;
         }
 

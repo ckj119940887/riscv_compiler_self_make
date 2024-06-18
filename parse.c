@@ -1,5 +1,8 @@
 #include "rvcc.h"
 
+// 在解析时，全部的变量实例都被累加到这个列表里。
+Obj* Locals;
+
 // program = stmt*
 // stmt = exprStmt
 // exprStmt = expr ";"
@@ -21,6 +24,19 @@ static Node* add(Token **Rest, Token* Tok);
 static Node* mul(Token **Rest, Token* Tok);
 static Node* unary(Token **Rest, Token* Tok);
 static Node* primary(Token **Rest, Token* Tok);
+
+// 通过一个名称，查找本地变量
+static Obj* findVar(Token* Tok) {
+    // 查找Locals中是否存在同名变量
+    for(Obj* Var = Locals; Var; Var = Var->Next) {
+        if((strlen(Var->Name) == Tok->Len) && 
+           !strncmp(Tok->Loc, Var->Name, Tok->Len)) {
+                return Var;
+           }
+    }
+
+    return NULL;
+}
 
 // 新建一个节点
 static Node* newNode(NodeKind Kind) {
@@ -53,10 +69,20 @@ static Node* newNum(int val) {
 }
 
 // 新建一个变量节点
-static Node* newVarNode(char Name) {
+static Node* newVarNode(Obj* Var) {
     Node* Nd = newNode(ND_VAR);
-    Nd->Name = Name;
+    Nd->Var = Var;
     return Nd;
+}
+
+// 链表中新增一个变量
+static Obj* newLVar(char* Name) {
+    Obj* Var = calloc(1, sizeof(Obj));
+    Var->Name = Name;
+    // 将变量插入头部
+    Var->Next = Locals;
+    Locals = Var;
+    return Var;
 }
 
 // 解析语句
@@ -236,9 +262,14 @@ static Node* primary(Token** Rest, Token* Tok) {
 
     // ident
     if(Tok->Kind == TK_IDENT) {
-        Node* Nd = newVarNode(*Tok->Loc);
+        // 查找变量
+        Obj* Var = findVar(Tok);
+        // strndup复制N个字符
+        if(!Var)
+            Var = newLVar(strndup(Tok->Loc, Tok->Len));
+
         *Rest = Tok->Next;
-        return Nd;
+        return newVarNode(Var);
     }
 
     if(Tok->Kind == TK_NUM) {
@@ -255,7 +286,7 @@ static Node* primary(Token** Rest, Token* Tok) {
 
 // 语法解析入口函数
 // program = stmt*
-Node *parse(Token *Tok) {
+Function *parse(Token *Tok) {
     Node Head = {};
     Node* Cur = &Head;
 
@@ -265,5 +296,10 @@ Node *parse(Token *Tok) {
         Cur = Cur->Next;
     }
 
-    return Head.Next;
+    // 函数体存储语句的AST，Locals存储变量
+    Function* Prog = calloc(1, sizeof(Function));
+    Prog->Body = Head.Next;
+    Prog->Locals = Locals;
+
+    return Prog;
 }
