@@ -122,6 +122,15 @@ static int readPunct(char* Ptr)
     return ispunct(*Ptr) ? 1 : 0;
 }
 
+// 遍历标识符链表，将所有关键字进行标识
+static void convertKeywords(Token* Tok) {
+    for(Token* T = Tok; T->Kind != TK_EOF; T = T->Next) {
+        if(equal(T, "return")) {
+            T->Kind = TK_KEYWORD;
+        }
+    }
+}
+
 // 终结符解析
 Token* tokenize(char* P) {
     CurrentInput = P;
@@ -148,7 +157,7 @@ Token* tokenize(char* P) {
             continue;
         }
 
-        //解析标识符
+        //解析标识符或关键字
         //[a-zA-Z_][a-zA-Z0-9_]*
         if(isIdent1(*P)) {
             char* Start = P;
@@ -177,5 +186,9 @@ Token* tokenize(char* P) {
     }
 
     Cur->Next = newToken(TK_EOF, P, P);
+
+    // 将所有关键字的终结符都标识为KEYWORD
+    convertKeywords(Head.Next);
+
     return Head.Next;
 }

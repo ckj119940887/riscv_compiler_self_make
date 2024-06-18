@@ -18,6 +18,7 @@
 typedef enum {
     TK_IDENT, //标识符，可以为变量名和函数名等
     TK_PUNCT, //操作符
+    TK_KEYWORD, //关键字
     TK_NUM, //数字
     TK_EOF, //终止符
 } TokenKind;
@@ -58,6 +59,7 @@ typedef enum {
     ND_LT, // <
     ND_LE, // <=
     ND_ASSIGN, // 赋值
+    ND_RETURN, // 返回
     ND_EXPR_STMT, // 表达式语句
     ND_VAR, // 变量
     ND_NUM, // 整形数字
