@@ -3,16 +3,18 @@
 // program = stmt*
 // stmt = exprStmt
 // exprStmt = expr ";"
-// expr = equality
+// expr = assign
+// assign = equality ("=" assign)?
 // equality = relational ("==" relational | "!=" relational)*
 // relational = add ("<" add | "<=" add | ">" add | ">=" add)*
 // add = mul ("+" mul | "-" mul)*
 // mul = unary("*" unary | "/" unary)*
 // unary = ("+" | "-") unary | primary
-// primary = "(" expr ")" | num
+// primary = "(" expr ")" | ident | num
 static Node* stmt(Token** Rest, Token* Tok);
 static Node* exprStmt(Token **Rest, Token* Tok);
 static Node* expr(Token **Rest, Token* Tok);
+static Node* assign(Token **Rest, Token* Tok);
 static Node* equality(Token **Rest, Token* Tok);
 static Node* relational(Token **Rest, Token* Tok);
 static Node* add(Token **Rest, Token* Tok);
@@ -50,6 +52,13 @@ static Node* newNum(int val) {
     return Nd;
 }
 
+// 新建一个变量节点
+static Node* newVarNode(char Name) {
+    Node* Nd = newNode(ND_VAR);
+    Nd->Name = Name;
+    return Nd;
+}
+
 // 解析语句
 // stmt = exprStmt
 static Node* stmt(Token** Rest, Token* Tok) {
@@ -65,9 +74,24 @@ static Node* exprStmt(Token** Rest, Token* Tok) {
 }
 
 // 解析表达式
-// expr = equality
+// expr = assign
 static Node* expr(Token **Rest, Token* Tok) {
-    return equality(Rest, Tok);
+    return assign(Rest, Tok);
+}
+
+// 解析赋值
+// assign = equality ("=" assign)?
+static Node* assign(Token **Rest, Token* Tok) {
+    Node* Nd = equality(&Tok, Tok);
+
+    // 可能存在递归赋值，如a=b=1
+    // ("=" assign)?
+    if(equal(Tok, "=")) {
+        Nd = newBinary(ND_ASSIGN, Nd, assign(&Tok, Tok->Next));
+    }
+
+    *Rest = Tok;
+    return Nd;
 }
 
 // 解析相等性
@@ -198,8 +222,8 @@ static Node* unary(Token** Rest, Token* Tok) {
     return primary(Rest, Tok);
 }
 
-// 解析括号、数字
-// primary = "(" expr ")" | num
+// 解析括号、数字、标识符
+// primary = "(" expr ")" | ident | num
 static Node* primary(Token** Rest, Token* Tok) {
     // "(" expr ")"
     if(equal(Tok, "(")) {
@@ -207,6 +231,13 @@ static Node* primary(Token** Rest, Token* Tok) {
         // 这里实际上完成了Tok=Tok->Next->Next->*, 前面进行了多次递归调用，Rest
         // 的值都没有发生改变在最底层的rule中进行更新
         *Rest = skip(Tok, ")");
+        return Nd;
+    }
+
+    // ident
+    if(Tok->Kind == TK_IDENT) {
+        Node* Nd = newVarNode(*Tok->Loc);
+        *Rest = Tok->Next;
         return Nd;
     }
 

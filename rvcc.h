@@ -12,6 +12,7 @@
 
 //终结符类型
 typedef enum {
+    TK_IDENT, //标识符，可以为变量名和函数名等
     TK_PUNCT, //操作符
     TK_NUM, //数字
     TK_EOF, //终止符
@@ -52,8 +53,10 @@ typedef enum {
     ND_NE, // !=
     ND_LT, // <
     ND_LE, // <=
+    ND_ASSIGN, // 赋值
     ND_EXPR_STMT, // 表达式语句
-    ND_NUM, //整形数字
+    ND_VAR, // 变量
+    ND_NUM, // 整形数字
 } NodeKind;
 
 // AST中二叉树节点
@@ -63,6 +66,7 @@ struct Node {
     Node* Next; // 下一语句
     Node* LHS; //左部
     Node* RHS; //右部
+    char Name; //存储ND_VAR的字符串
     int Val; //ND_NUM种类的值
 };
 
