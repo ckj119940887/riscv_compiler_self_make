@@ -1,5 +1,8 @@
 #include "rvcc.h"
 
+// program = stmt*
+// stmt = exprStmt
+// exprStmt = expr ";"
 // expr = equality
 // equality = relational ("==" relational | "!=" relational)*
 // relational = add ("<" add | "<=" add | ">" add | ">=" add)*
@@ -7,6 +10,8 @@
 // mul = unary("*" unary | "/" unary)*
 // unary = ("+" | "-") unary | primary
 // primary = "(" expr ")" | num
+static Node* stmt(Token** Rest, Token* Tok);
+static Node* exprStmt(Token **Rest, Token* Tok);
 static Node* expr(Token **Rest, Token* Tok);
 static Node* equality(Token **Rest, Token* Tok);
 static Node* relational(Token **Rest, Token* Tok);
@@ -42,6 +47,20 @@ static Node* newBinary(NodeKind Kind, Node* LHS, Node* RHS) {
 static Node* newNum(int val) {
     Node* Nd = newNode(ND_NUM);
     Nd->Val = val;
+    return Nd;
+}
+
+// 解析语句
+// stmt = exprStmt
+static Node* stmt(Token** Rest, Token* Tok) {
+    return exprStmt(Rest, Tok);
+}
+
+// 解析表达式语句
+// exprStmt = expr ";"
+static Node* exprStmt(Token** Rest, Token* Tok) {
+    Node* Nd = newUnary(ND_EXPR_STMT, expr(&Tok, Tok));
+    *Rest = skip(Tok, ";");
     return Nd;
 }
 
@@ -185,12 +204,16 @@ static Node* primary(Token** Rest, Token* Tok) {
     // "(" expr ")"
     if(equal(Tok, "(")) {
         Node* Nd = expr(&Tok, Tok->Next);
+        // 这里实际上完成了Tok=Tok->Next->Next->*, 前面进行了多次递归调用，Rest
+        // 的值都没有发生改变在最底层的rule中进行更新
         *Rest = skip(Tok, ")");
         return Nd;
     }
 
     if(Tok->Kind == TK_NUM) {
         Node* Nd = newNum(Tok->Val);
+        // 这里实际上完成了Tok=Tok->Next->Next->*, 前面进行了多次递归调用，Rest
+        // 的值都没有发生改变在最底层的rule中进行更新
         *Rest = Tok->Next;
         return Nd;
     }
@@ -200,9 +223,16 @@ static Node* primary(Token** Rest, Token* Tok) {
 }
 
 // 语法解析入口函数
+// program = stmt*
 Node *parse(Token *Tok) {
-  Node *Nd = expr(&Tok, Tok);
-  if (Tok->Kind != TK_EOF)
-    errorTok(Tok, "extra token");
-  return Nd;
+    Node Head = {};
+    Node* Cur = &Head;
+
+    // stmt*
+    while(Tok->Kind != TK_EOF) {
+        Cur->Next = stmt(&Tok, Tok);
+        Cur = Cur->Next;
+    }
+
+    return Head.Next;
 }

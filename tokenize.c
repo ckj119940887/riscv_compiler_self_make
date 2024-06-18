@@ -130,6 +130,7 @@ Token* tokenize(char* P) {
             
             Cur = Cur->Next;
             const char* OldPtr = P;
+            // strtoul第二个参数会被设置为numerical value的下一个character(相当于P++)
             Cur->Val = strtoul(P, &P, 10);
             Cur->Len = P - OldPtr;
             continue;
