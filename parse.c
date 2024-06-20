@@ -3,8 +3,10 @@
 // 在解析时，全部的变量实例都被累加到这个列表里。
 Obj* Locals;
 
-// program = stmt*
-// stmt = "return" expr ";" | exprStmt
+// program = "{" compoundStmt
+// compoundStmt = stmt* "}"
+// stmt = "return expr" ";" | "{" compoundStmt | exprStmt
+// stmt = expr ";"
 // exprStmt = expr ";"
 // expr = assign
 // assign = equality ("=" assign)?
@@ -14,6 +16,7 @@ Obj* Locals;
 // mul = unary("*" unary | "/" unary)*
 // unary = ("+" | "-") unary | primary
 // primary = "(" expr ")" | ident | num
+static Node* compoundStmt(Token** Rest, Token* Tok);
 static Node* stmt(Token** Rest, Token* Tok);
 static Node* exprStmt(Token **Rest, Token* Tok);
 static Node* expr(Token **Rest, Token* Tok);
@@ -85,14 +88,39 @@ static Obj* newLVar(char* Name) {
     return Var;
 }
 
+// 解析复合语句
+// compoundStmt = stmt* "}"
+static Node* compoundStmt(Token** Rest, Token* Tok) {
+    // 这里使用了和词法分析类似的单向链表结构
+    Node Head = {};
+    Node* Cur = &Head;
+
+    // stmt* "}"
+    while(!equal(Tok, "}")) {
+        Cur->Next = stmt(&Tok, Tok);
+        Cur = Cur->Next;
+    }
+
+    // Nd的Body存储了{}内解析的语句
+    Node* Nd = newNode(ND_BLOCK);
+    Nd->Body = Head.Next;
+    *Rest = Tok->Next;
+    return Nd;
+}
+
 // 解析语句
-// stmt = "return" expr ";" | exprStmt
+// stmt = "return expr" ";" | "{" compoundStmt | exprStmt
 static Node* stmt(Token** Rest, Token* Tok) {
     //"return" expr ";"
     if(equal(Tok, "return")) {
         Node* Nd = newUnary(ND_RETURN, expr(&Tok, Tok->Next));
         *Rest = skip(Tok, ";");
         return Nd;
+    }
+
+    //"{" compoundStmt
+    if(equal(Tok, "{")) {
+        return compoundStmt(Rest, Tok->Next);
     }
 
     //exprStmt
