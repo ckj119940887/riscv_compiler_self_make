@@ -5,7 +5,10 @@ Obj* Locals;
 
 // program = "{" compoundStmt
 // compoundStmt = stmt* "}"
-// stmt = "return expr" ";" | "{" compoundStmt | exprStmt
+// stmt = "return expr" ";" 
+//        | "if" "(" exprStmt ")" stmt ("else" stmt)? 
+//        | "{" compoundStmt 
+//        | exprStmt
 // exprStmt = expr? ";"
 // expr = assign
 // assign = equality ("=" assign)?
@@ -108,12 +111,31 @@ static Node* compoundStmt(Token** Rest, Token* Tok) {
 }
 
 // 解析语句
-// stmt = "return expr" ";" | "{" compoundStmt | exprStmt
+// stmt = "return expr" ";" 
+//        | "if" "(" exprStmt ")" stmt ("else" stmt)? 
+//        | "{" compoundStmt 
+//        | exprStmt
 static Node* stmt(Token** Rest, Token* Tok) {
     //"return" expr ";"
     if(equal(Tok, "return")) {
         Node* Nd = newUnary(ND_RETURN, expr(&Tok, Tok->Next));
         *Rest = skip(Tok, ";");
+        return Nd;
+    }
+
+    //"if" "(" exprStmt ")" stmt ("else" stmt)?
+    if(equal(Tok, "if")) {
+        Node* Nd = newNode(ND_IF);
+        //"(" exprStmt ")"
+        Tok = skip(Tok->Next, "(");
+        Nd->Cond = expr(&Tok, Tok);
+        Tok = skip(Tok, ")");
+        // stmt
+        Nd->Then = stmt(&Tok, Tok);
+        //("else" stmt)?
+        if(equal(Tok, "else"))
+            Nd->Els = stmt(&Tok, Tok->Next);
+        *Rest = Tok;
         return Nd;
     }
 
