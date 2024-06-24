@@ -125,7 +125,7 @@ static int readPunct(char* Ptr)
 // 判断是否为关键字
 static bool isKeyword(Token* Tok) {
     //关键字列表
-    static char* Kw[] = {"return", "if", "else", "for"};
+    static char* Kw[] = {"return", "if", "else", "for", "while"};
 
     //遍历关键字列表进行匹配
     //每个数组的元素是一样的，所以先算出总的长素，然后处以单独元素的长度
